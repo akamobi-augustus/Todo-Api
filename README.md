@@ -1,9 +1,9 @@
 # Todo-Api
 
-A REST API for managing tasks with categories, due dates and statuses, built with ASP.NET Core and Entity Framework Core.
+A REST API and web interface for managing tasks with categories, due dates and statuses, built with ASP.NET Core and Entity Framework Core.
 
 ## Tech Stack
-C# · ASP.NET Core (.NET 9) · Entity Framework Core · SQLite · Swagger (Swashbuckle)
+C# · ASP.NET Core (.NET 9) · Entity Framework Core · SQLite · Swagger (Swashbuckle) · HTML, CSS and JavaScript
 
 ## Features
 - Full CRUD for tasks and categories
@@ -12,6 +12,7 @@ C# · ASP.NET Core (.NET 9) · Entity Framework Core · SQLite · Swagger (Swashbuck
 - Filtering by status, category and overdue; title search; paging
 - Input validation with proper HTTP status codes (400, 404, 409)
 - Deleting a category keeps its tasks (they become uncategorised)
+- Web interface served by the API itself (no separate frontend server)
 - EF Core migrations; the database is created automatically on first run
 
 ## Getting Started
@@ -19,12 +20,15 @@ C# · ASP.NET Core (.NET 9) · Entity Framework Core · SQLite · Swagger (Swashbuck
 Requirements: [.NET 9 SDK](https://dotnet.microsoft.com/download)
 
 ```
-git clone git@github.com:akamobi-augustus/REPO-NAME.git
-cd REPO-NAME
+git clone git@github.com:akamobi-augustus/Todo-Api.git
+cd Todo-Api
 dotnet run
 ```
 
-Open the URL printed in the terminal and add `/swagger` (for example `http://localhost:5093/swagger`).
+Then open the URL printed in the terminal (for example `http://localhost:5093`):
+
+- `/` opens the web interface
+- `/swagger` opens the interactive API docs
 
 ## Endpoints
 
@@ -62,9 +66,11 @@ Data/          EF Core DbContext
 Dtos/          Request and response models
 Models/        Entities and enums
 Migrations/    Database migrations
+wwwroot/       Web interface (index.html)
 ```
 
 ## Roadmap
+- [x] Web interface
 - [ ] Service layer and unit tests (xUnit)
 - [ ] JWT authentication (each user sees only their own tasks)
 - [ ] Dockerfile and GitHub Actions CI
