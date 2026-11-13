@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Todo-Api</title>
+    <style>
+        :root {
+            --bg: #f3f5f7;
+            --ink: #14212b;
+            --muted: #5d6b78;
+            --line: #d5dce3;
+            --accent: #0f766e;
+            --accent-ink: #ffffff;
+            --danger: #b42318;
+            --surface: #ffffff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1a22;
+                --ink: #e8eef3;
+                --muted: #8fa0ae;
+                --line: #2a3a47;
+                --accent: #2dd4bf;
+                --accent-ink: #062b27;
+                --danger: #f87171;
+                --surface: #16242e;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
+        }
+
+        main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 16px 64px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            color: var(--muted);
+            margin: 0 0 28px;
+        }
+
+        h2 {
+            font-size: 1.05rem;
+            margin: 32px 0 10px;
+        }
+
+        input, select, textarea, button {
+            font: inherit;
+            color: var(--ink);
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+            input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+
+        button {
+            cursor: pointer;
+        }
+
+            button.primary {
+                background: var(--accent);
+                color: var(--accent-ink);
+                border-color: var(--accent);
+                font-weight: 600;
+            }
+
+            button.danger {
+                color: var(--danger);
+                border-color: transparent;
+                background: transparent;
+            }
+
+            button:disabled {
+                opacity: .45;
+                cursor: default;
+            }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+            .grid .wide {
+                grid-column: 1 / -1;
+            }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: .9rem;
+            color: var(--muted);
+        }
+
+            .field input, .field select, .field textarea {
+                color: var(--ink);
+            }
+
+        .bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+            .bar input[type=search] {
+                flex: 1;
+                min-width: 160px;
+            }
+
+        .check {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            color: var(--muted);
+        }
+
+        #msg {
+            color: var(--danger);
+            min-height: 1.5em;
+            margin: 10px 0 0;
+            font-weight: 600;
+        }
+
+        .todo {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            padding: 14px 0 14px 14px;
+            border-top: 1px solid var(--line);
+            border-left: 4px solid var(--line);
+        }
+
+            .todo.overdue {
+                border-left-color: var(--danger);
+            }
+
+            .todo.done {
+                border-left-color: var(--accent);
+            }
+
+                .todo.done .title {
+                    text-decoration: line-through;
+                    color: var(--muted);
+                }
+
+        .title {
+            font-weight: 600;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .tag {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .late {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+            align-items: start;
+        }
+
+        .pager {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+        }
+
+        .empty {
+            color: var(--muted);
+            padding: 24px 0;
+        }
+
+        @media (max-width: 560px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .todo {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Todo-Api</h1>
+        <p class="tagline">Plan tasks, group them in categories, and watch the due dates.</p>
+
+        <form id="todoForm" class="grid">
+            <label class="field wide">
+                Task title
+                <input id="title" required maxlength="200" placeholder="What needs doing?">
+            </label>
+            <label class="field wide">
+                Notes
+                <textarea id="description" rows="2" maxlength="2000"></textarea>
+            </label>
+            <label class="field">
+                Due date
+                <input id="dueDate" type="datetime-local">
+            </label>
+            <label class="field">
+                Status
+                <select id="status">
+                    <option>Pending</option>
+                    <option>InProgress</option>
+                    <option>Done</option>
+                </select>
+            </label>
+            <label class="field">
+                Category
+                <select id="category"></select>
+            </label>
+            <div class="field" style="justify-content:end">
+                <button class="primary" type="submit">Add task</button>
+            </div>
+        </form>
+        <p id="msg" role="alert"></p>
+
+        <h2>Your tasks</h2>
+        <div class="bar">
+            <input id="search" type="search" placeholder="Search by title">
+            <select id="filterStatus" aria-label="Filter by status">
+                <option value="">Any status</option>
+                <option>Pending</option>
+                <option>InProgress</option>
+                <option>Done</option>
+            </select>
+            <select id="filterCategory" aria-label="Filter by category"></select>
+            <label class="check"><input id="overdueOnly" type="checkbox"> Overdue only</label>
+        </div>
+
+        <div id="list"></div>
+        <div class="pager">
+            <button id="prev" type="button">Previous</button>
+            <span id="pageInfo" class="meta"></span>
+            <button id="next" type="button">Next</button>
+        </div>
+
+        <h2>Add a category</h2>
+        <form id="catForm" class="bar">
+            <input id="catName" required maxlength="50" placeholder="Category name">
+            <button class="primary" type="submit">Add category</button>
+        </form>
+    </main>
+
+    <script>
+const $ = id => document.getElementById(id);
+const state = { page: 1, pageSize: 10, total: 0 };
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// The API stores UTC. Add a trailing Z if the server left it off.
+const utc = s => new Date(/Z$|[+-]\d\d:\d\d$/.test(s) ? s : s + 'Z');
+
+const showError = e => { $('msg').textContent = e ? e.message : ''; };
+
+async function call(path, options = {}) {
+  const res = await fetch('/api' + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+  if (!res.ok) {
+    let text = res.statusText || 'Request failed';
+    try { const b = await res.json(); text = b.error || b.title || text; } catch {}
+    throw new Error(text);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function loadCategories() {
+  const keep = $('filterCategory').value;
+  const list = await call('/categories');
+  const opts = list.map(c => `<option value="${c.id}">${esc(c.name)} (${c.todoCount})</option>`).join('');
+  $('filterCategory').innerHTML = '<option value="">Any category</option>' + opts;
+  $('filterCategory').value = keep;
+  const keepForm = $('category').value;
+  $('category').innerHTML = '<option value="">No category</option>' + opts;
+  $('category').value = keepForm;
+}
+
+async function loadTodos() {
+  const p = new URLSearchParams({ page: state.page, pageSize: state.pageSize });
+  if ($('filterStatus').value) p.set('status', $('filterStatus').value);
+  if ($('filterCategory').value) p.set('categoryId', $('filterCategory').value);
+  if ($('overdueOnly').checked) p.set('overdue', 'true');
+  if ($('search').value.trim()) p.set('search', $('search').value.trim());
+
+  const data = await call('/todos?' + p);
+  if (data.items.length === 0 && state.page > 1) { state.page--; return loadTodos(); }
+
+  state.total = data.totalCount;
+  const pages = Math.max(1, Math.ceil(state.total / state.pageSize));
+  $('pageInfo').textContent = `Page ${state.page} of ${pages} · ${state.total} tasks`;
+  $('prev').disabled = state.page <= 1;
+  $('next').disabled = state.page >= pages;
+  renderTodos(data.items);
+}
+
+function renderTodos(items) {
+  if (!items.length) {
+    $('list').innerHTML = '<p class="empty">No tasks match. Add one above, or clear the filters.</p>';
+    return;
+  }
+  $('list').innerHTML = items.map(t => `
+    <div class="todo ${t.isOverdue ? 'overdue' : ''} ${t.status === 'Done' ? 'done' : ''}">
+      <div>
+        <div class="title">${esc(t.title)}</div>
+        ${t.description ? `<div class="meta">${esc(t.description)}</div>` : ''}
+        <div class="meta">
+          ${t.categoryName ? `<span class="tag">${esc(t.categoryName)}</span> · ` : ''}
+          ${t.dueDate ? 'Due ' + utc(t.dueDate).toLocaleString() : 'No due date'}
+          ${t.isOverdue ? ' · <span class="late">Overdue</span>' : ''}
+        </div>
+      </div>
+      <div class="actions">
+        <select data-action="status" data-id="${t.id}" aria-label="Status">
+          ${['Pending', 'InProgress', 'Done'].map(s =>
+            `<option ${s === t.status ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+        <button class="danger" data-action="delete" data-id="${t.id}">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+$('todoForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const due = $('dueDate').value;
+  const body = {
+    title: $('title').value,
+    description: $('description').value || null,
+    dueDate: due ? new Date(due).toISOString() : null,
+    status: $('status').value,
+    categoryId: $('category').value ? Number($('category').value) : null
+  };
+  try {
+    await call('/todos', { method: 'POST', body: JSON.stringify(body) });
+    e.target.reset(); showError(); state.page = 1;
+    await Promise.all([loadTodos(), loadCategories()]);
+  } catch (err) { showError(err); }
+});
+
+$('catForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try {
+    await call('/categories', { method: 'POST', body: JSON.stringify({ name: $('catName').value }) });
+    e.target.reset(); showError(); await loadCategories();
+  } catch (err) { showError(err); }
+});
+
+$('list').addEventListener('change', async e => {
+  if (e.target.dataset.action !== 'status') return;
+  try {
+    await call(`/todos/${e.target.dataset.id}/status`,
+      { method: 'PATCH', body: JSON.stringify({ status: e.target.value }) });
+    showError(); await loadTodos();
+  } catch (err) { showError(err); }
+});
+
+$('list').addEventListener('click', async e => {
+  if (e.target.dataset.action !== 'delete') return;
+  if (!confirm('Delete this task?')) return;
+  try {
+    await call(`/todos/${e.target.dataset.id}`, { method: 'DELETE' });
+    showError();
+    await Promise.all([loadTodos(), loadCategories()]);
+  } catch (err) { showError(err); }
+});
+
+const refilter = () => { state.page = 1; loadTodos().catch(showError); };
+['filterStatus', 'filterCategory', 'overdueOnly'].forEach(id => $(id).addEventListener('change', refilter));
+let timer;
+$('search').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refilter, 300); });
+$('prev').addEventListener('click', () => { state.page--; loadTodos().catch(showError); });
+$('next').addEventListener('click', () => { state.page++; loadTodos().catch(showError); });
+
+(async () => {
+  try { await loadCategories(); await loadTodos(); } catch (err) { showError(err); }
+})();
+    </script>
+</body>
+</html>

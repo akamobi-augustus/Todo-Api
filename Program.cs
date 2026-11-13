@@ -26,7 +26,8 @@ if (app.Environment.IsDevelopment())
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
 }
 
-app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+app.UseDefaultFiles();   // serves wwwroot/index.html at "/"
+app.UseStaticFiles();
 app.MapControllers();
 app.Run();
 
