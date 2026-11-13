@@ -328,7 +328,7 @@ async function loadTodos() {
 
   state.total = data.totalCount;
   const pages = Math.max(1, Math.ceil(state.total / state.pageSize));
-  $('pageInfo').textContent = `Page ${state.page} of ${pages} · ${state.total} tasks`;
+  $('pageInfo').textContent = `Page ${state.page} of ${pages} | ${state.total} tasks`;
   $('prev').disabled = state.page <= 1;
   $('next').disabled = state.page >= pages;
   renderTodos(data.items);
@@ -345,9 +345,9 @@ function renderTodos(items) {
         <div class="title">${esc(t.title)}</div>
         ${t.description ? `<div class="meta">${esc(t.description)}</div>` : ''}
         <div class="meta">
-          ${t.categoryName ? `<span class="tag">${esc(t.categoryName)}</span> · ` : ''}
+          ${t.categoryName ? `<span class="tag">${esc(t.categoryName)}</span> &middot; ` : ''}
           ${t.dueDate ? 'Due ' + utc(t.dueDate).toLocaleString() : 'No due date'}
-          ${t.isOverdue ? ' · <span class="late">Overdue</span>' : ''}
+          ${t.isOverdue ? ' &middot; <span class="late">Overdue</span>' : ''}
         </div>
       </div>
       <div class="actions">
