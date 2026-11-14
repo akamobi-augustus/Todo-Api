@@ -9,6 +9,8 @@ public class TodoItem
     public TodoStatus Status { get; set; } = TodoStatus.Pending;
     public int? CategoryId { get; set; }
     public Category? Category { get; set; }
+    public int UserId { get; set; }
+    public User? User { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
