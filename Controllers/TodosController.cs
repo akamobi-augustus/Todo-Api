@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Todo_Api.Data;
 using Todo_Api.Dtos;
 using Todo_Api.Models;
+using Todo_Api.Services;
 
 namespace Todo_Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/todos")]
 public class TodosController(AppDbContext db) : ControllerBase
@@ -14,11 +17,14 @@ public class TodosController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<PagedResult<TodoResponse>>> GetAll(
         [FromQuery] TodoQuery q, CancellationToken ct)
     {
+        var userId = User.GetUserId();
         var page = Math.Max(q.Page, 1);
         var pageSize = Math.Clamp(q.PageSize, 1, 100);
         var now = DateTime.UtcNow;
 
-        var query = db.Todos.AsNoTracking().Include(t => t.Category).AsQueryable();
+        var query = db.Todos.AsNoTracking()
+            .Include(t => t.Category)
+            .Where(t => t.UserId == userId);
 
         if (q.Status is not null)
             query = query.Where(t => t.Status == q.Status);
@@ -51,15 +57,18 @@ public class TodosController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TodoResponse>> GetById(int id, CancellationToken ct)
     {
+        var userId = User.GetUserId();
         var todo = await db.Todos.AsNoTracking().Include(t => t.Category)
-            .FirstOrDefaultAsync(t => t.Id == id, ct);
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
         return todo is null ? NotFound() : ToResponse(todo);
     }
 
     [HttpPost]
     public async Task<ActionResult<TodoResponse>> Create(TodoRequest request, CancellationToken ct)
     {
-        if (!await CategoryOk(request.CategoryId, ct))
+        var userId = User.GetUserId();
+
+        if (!await CategoryOk(request.CategoryId, userId, ct))
             return BadRequest(new { error = $"Category {request.CategoryId} does not exist." });
 
         var todo = new TodoItem
@@ -68,7 +77,8 @@ public class TodosController(AppDbContext db) : ControllerBase
             Description = request.Description?.Trim(),
             DueDate = request.DueDate?.ToUniversalTime(),
             Status = request.Status,
-            CategoryId = request.CategoryId
+            CategoryId = request.CategoryId,
+            UserId = userId
         };
 
         db.Todos.Add(todo);
@@ -81,10 +91,12 @@ public class TodosController(AppDbContext db) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<TodoResponse>> Update(int id, TodoRequest request, CancellationToken ct)
     {
-        var todo = await db.Todos.Include(t => t.Category).FirstOrDefaultAsync(t => t.Id == id, ct);
+        var userId = User.GetUserId();
+        var todo = await db.Todos.Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
         if (todo is null) return NotFound();
 
-        if (!await CategoryOk(request.CategoryId, ct))
+        if (!await CategoryOk(request.CategoryId, userId, ct))
             return BadRequest(new { error = $"Category {request.CategoryId} does not exist." });
 
         todo.Title = request.Title.Trim();
@@ -103,7 +115,9 @@ public class TodosController(AppDbContext db) : ControllerBase
     [HttpPatch("{id:int}/status")]
     public async Task<ActionResult<TodoResponse>> UpdateStatus(int id, StatusRequest request, CancellationToken ct)
     {
-        var todo = await db.Todos.Include(t => t.Category).FirstOrDefaultAsync(t => t.Id == id, ct);
+        var userId = User.GetUserId();
+        var todo = await db.Todos.Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
         if (todo is null) return NotFound();
 
         todo.Status = request.Status;
@@ -116,7 +130,8 @@ public class TodosController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var todo = await db.Todos.FindAsync([id], ct);
+        var userId = User.GetUserId();
+        var todo = await db.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
         if (todo is null) return NotFound();
 
         db.Todos.Remove(todo);
@@ -124,8 +139,10 @@ public class TodosController(AppDbContext db) : ControllerBase
         return NoContent();
     }
 
-    private async Task<bool> CategoryOk(int? categoryId, CancellationToken ct) =>
-        categoryId is null || await db.Categories.AnyAsync(c => c.Id == categoryId, ct);
+    // A task may only use a category that belongs to the same user
+    private async Task<bool> CategoryOk(int? categoryId, int userId, CancellationToken ct) =>
+        categoryId is null ||
+        await db.Categories.AnyAsync(c => c.Id == categoryId && c.UserId == userId, ct);
 
     private static TodoResponse ToResponse(TodoItem t) => new(
         t.Id,
