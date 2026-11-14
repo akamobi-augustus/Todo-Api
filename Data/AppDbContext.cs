@@ -5,15 +5,28 @@ namespace Todo_Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<User> Users => Set<User>();
     public DbSet<TodoItem> Todos => Set<TodoItem>();
     public DbSet<Category> Categories => Set<Category>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<User>(e =>
+        {
+            e.Property(x => x.Email).HasMaxLength(254).IsRequired();
+            e.HasIndex(x => x.Email).IsUnique();
+            e.Property(x => x.PasswordHash).IsRequired();
+        });
+
         modelBuilder.Entity<Category>(e =>
         {
             e.Property(x => x.Name).HasMaxLength(50).IsRequired();
-            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.Name }).IsUnique();   // unique per user
+
+            e.HasOne(x => x.User)
+             .WithMany(u => u.Categories)
+             .HasForeignKey(x => x.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<TodoItem>(e =>
@@ -28,6 +41,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
              .WithMany(c => c.Todos)
              .HasForeignKey(x => x.CategoryId)
              .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(x => x.User)
+             .WithMany(u => u.Todos)
+             .HasForeignKey(x => x.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
