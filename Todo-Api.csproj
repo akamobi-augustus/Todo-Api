@@ -17,5 +17,11 @@
 		</PackageReference>
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
 	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="tests\**" />
+		<Content Remove="tests\**" />
+		<EmbeddedResource Remove="tests\**" />
+		<None Remove="tests\**" />
+	</ItemGroup>
 
 </Project>
