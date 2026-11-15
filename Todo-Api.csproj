@@ -10,12 +10,18 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.*" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.*" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.*" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.*">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="tests\**" />
+		<Content Remove="tests\**" />
+		<EmbeddedResource Remove="tests\**" />
+		<None Remove="tests\**" />
 	</ItemGroup>
 
 </Project>

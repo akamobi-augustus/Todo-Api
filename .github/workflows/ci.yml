@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Todo-Api.sln
+
+      - name: Build
+        run: dotnet build Todo-Api.sln --configuration Release --no-restore
+
+      - name: Test (starts a real PostgreSQL container with Testcontainers)
+        run: dotnet test tests/Todo-Api.Tests --configuration Release --no-build
